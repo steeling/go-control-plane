@@ -90,11 +90,13 @@ func (s *server) process(str stream.Stream, reqCh <-chan *discovery.DiscoveryReq
 	// node may only be set on the first discovery request
 	var node = &core.Node{}
 
+	ctx, cancel := context.WithCancel(str.Context())
 	defer func() {
 		watches.close()
 		if s.callbacks != nil {
 			s.callbacks.OnStreamClosed(streamID, node)
 		}
+		cancel()
 	}()
 
 	// sends a response by serializing to protobuf Any
@@ -128,7 +130,7 @@ func (s *server) process(str stream.Stream, reqCh <-chan *discovery.DiscoveryReq
 	}
 
 	if s.callbacks != nil {
-		if err := s.callbacks.OnStreamOpen(str.Context(), streamID, defaultTypeURL); err != nil {
+		if err := s.callbacks.OnStreamOpen(ctx, streamID, defaultTypeURL); err != nil {
 			return err
 		}
 	}
